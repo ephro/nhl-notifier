@@ -11,6 +11,9 @@ Once the script is running, any time there is a new score or power play it will 
 in the format of [team_abbr]_score or [team_abbr]_power_play. The [team_abbr] is a lowercase team abbreviation, such as
 vgk for the Vegas Golden Knights.
 
+For ECHL the events are prepended with echl_, so for example if you want the event to happen on Fort Wayne it would be
+echl_fw_score.
+
 To setup Webhooks in IFTTT, go to this page:
 
 https://ifttt.com/maker_webhooks
