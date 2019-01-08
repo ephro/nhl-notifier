@@ -159,6 +159,7 @@ class NHLTeams:
                  "Los Angeles Kings": "LAK",
                  "Minnesota Wild": "MIN",
                  "Montreal Canadiens": "MTL",
+                 "Montréal Canadiens": "MTL",
                  "New Jersey Devils": "NJD",
                  "Nashville Predators": "NSH",
                  "New York Islanders": "NYI",
@@ -215,6 +216,8 @@ def check_nhl():
             else:
                 delay = min(d, delay)
         return delay
+    except IndexError:
+        return MAX_DELAY
     except Exception as e:
         # If anything goes wrong with the load then retry in MIN_DELAY sec
         print('Exception', e)

@@ -27,3 +27,10 @@ The part that is redacted is what you want to copy and add to a file called priv
 After that you want to go to your normal IFTTT account page. Make a new Applet and set the trigger to be 'Webhooks'
 
 For the event name put in the event name as described above. Then connect the action to whatever action you want to have happen.
+
+
+Updates
+
+Jan 8, 2019
+MAX_DELAY Exception 
+Fixed Montréal Canadiens
