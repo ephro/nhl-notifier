@@ -125,8 +125,11 @@ class Team:
                                                                          ifttt=IFTTT_KEY,
                                                                          preamble=preamble))
         print('Sending', notification)
-        with urllib.request.urlopen(notification) as notify:
-            raw_response = notify.read()
+        try:
+            with urllib.request.urlopen(notification) as notify:
+                raw_response = notify.read()
+        except urllib.error.HTTPError as e:
+            pass
 
     def notify_of_power_play(self):
         print('PP', self.team_abbr)
