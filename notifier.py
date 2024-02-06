@@ -6,6 +6,7 @@ import urllib.request
 import json
 import time
 import dateutil.parser
+import requests
 
 # You need a file named private_key in order for this to work
 try:
@@ -47,8 +48,11 @@ class NHLGame:
         self.game_date = game_date
         self.game_status = None
 
+    def __str__(self):
+        return f"{self.home.team_name} {'PP' if self.home.in_power_play else ''} vs {self.away.team_name} {'PP' if self.away.in_power_play else ''} - {self.game_status}, {self.home.last_score}-{self.away.last_score}"
+
     def time_delay(self):
-        if self.game_status == 'Live':
+        if self.game_status == 'LIVE':
             return MIN_DELAY
         now = datetime.datetime.now(datetime.timezone.utc)
         time_delta = (self.game_date - now).total_seconds()
@@ -146,38 +150,38 @@ class Team:
 
 
 class NHLTeams:
-    team_dict = {"Anaheim Ducks": "ANA",
-                 "Arizona Coyotes": "ARI",
-                 "Boston Bruins": "BOS",
-                 "Buffalo Sabres": "BUF",
-                 "Carolina Hurricanes": "CAR",
-                 "Columbus Blue Jackets": "CBJ",
-                 "Calgary Flames": "CGY",
-                 "Chicago Blackhawks": "CHI",
-                 "Colorado Avalanche": "COL",
-                 "Dallas Stars": "DAL",
-                 "Detroit Red Wings": "DET",
-                 "Edmonton Oilers": "EDM",
-                 "Florida Panthers": "FLA",
-                 "Los Angeles Kings": "LAK",
-                 "Minnesota Wild": "MIN",
-                 "Montreal Canadiens": "MTL",
-                 "Montréal Canadiens": "MTL",
-                 "New Jersey Devils": "NJD",
-                 "Nashville Predators": "NSH",
-                 "New York Islanders": "NYI",
-                 "New York Rangers": "NYR",
-                 "Ottawa Senators": "OTT",
-                 "Philadelphia Flyers": "PHI",
-                 "Pittsburgh Penguins": "PIT",
-                 "San Jose Sharks": "SJS",
-                 "St. Louis Blues": "STL",
-                 "Tampa Bay Lightning": "TBL",
-                 "Toronto Maple Leafs": "TOR",
-                 "Vancouver Canucks": "VAN",
-                 "Vegas Golden Knights": "VGK",
-                 "Winnipeg Jets": "WPG",
-                 "Washington Capitals": "WSH"
+    team_dict = {"Ducks": "ANA",
+                 "Coyotes": "ARI",
+                 "Bruins": "BOS",
+                 "Sabres": "BUF",
+                 "Hurricanes": "CAR",
+                 "Blue Jackets": "CBJ",
+                 "Flames": "CGY",
+                 "Blackhawks": "CHI",
+                 "Avalanche": "COL",
+                 "Stars": "DAL",
+                 "Red Wings": "DET",
+                 "Oilers": "EDM",
+                 "Panthers": "FLA",
+                 "Kings": "LAK",
+                 "Wild": "MIN",
+                 "Canadiens": "MTL",
+                 # "Canadiens": "MTL",
+                 "Devils": "NJD",
+                 "Predators": "NSH",
+                 "Islanders": "NYI",
+                 "Rangers": "NYR",
+                 "Senators": "OTT",
+                 "Flyers": "PHI",
+                 "Penguins": "PIT",
+                 "Sharks": "SJS",
+                 "Blues": "STL",
+                 "Lightning": "TBL",
+                 "Maple Leafs": "TOR",
+                 "Canucks": "VAN",
+                 "Golden Knights": "VGK",
+                 "Jets": "WPG",
+                 "Capitals": "WSH"
                  }
 
 
@@ -188,31 +192,39 @@ echl_games = dict()
 def check_nhl():
     try:
         delay = MAX_DELAY
-        with urllib.request.urlopen('https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore') as response:
-            raw_json = response.read().decode('utf8')
+        # with urllib.request.urlopen('https://statsapi.web.nhl.com/api/v1/schedule?expand=schedule.linescore') as response:
+        s = requests.session()
+        s.get("https://api-web.nhle.com/v1/score/" + time.strftime('%Y-%m-%d'), headers={"dnt": "1", "sec-gpc": "1"})
+        with s.get("https://api-web.nhle.com/v1/score/" + time.strftime('%Y-%m-%d'), headers={"dnt": "1", "sec-gpc": "1"}) as response:
+            raw_json = response.text
             # with open(os.path.join(os.path.dirname(__file__), 'raw_data', str(time.time()) + '.json'), 'w') as json_file:
             #     json_file.write(raw_json)
             #     json_file.close()
 
         json_data = json.loads(raw_json)
-        for game in json_data['dates'][0]['games']:
-            game_pk = game['gamePk']
+        for game in json_data['games']:
+            game_pk = game['id']
             game_date = dateutil.parser.parse(game['gameDate'])
             if game_pk not in nhl_games:
-                nhl_games[game_pk] = NHLGame(game['teams']['home']['team']['name'],
-                                             game['teams']['away']['team']['name'],
-                                             game['teams']['home']['score'],
-                                             game['teams']['away']['score'],
+                nhl_games[game_pk] = NHLGame(game['homeTeam']['name']['default'],
+                                             game['awayTeam']['name']['default'],
+                                             game['homeTeam']['score'],
+                                             game['awayTeam']['score'],
                                              game_date)
-            nhl_games[game_pk].game_status = game['status']['abstractGameState']
-            nhl_games[game_pk].home.last_score = game['teams']['home']['score']
-            nhl_games[game_pk].away.last_score = game['teams']['away']['score']
-            nhl_games[game_pk].home.in_power_play = game['linescore']['teams']['home']['powerPlay']
-            nhl_games[game_pk].away.in_power_play = game['linescore']['teams']['away']['powerPlay']
+            nhl_games[game_pk].game_status = game['gameState']
+            nhl_games[game_pk].home.last_score = game['homeTeam']['score']
+            nhl_games[game_pk].away.last_score = game['awayTeam']['score']
+            if "situation" in game:
+                nhl_games[game_pk].home.in_power_play = "PP" in game['situation']['homeTeam']['situation']
+                nhl_games[game_pk].away.in_power_play = "PP" in game['situation']['awayTeam']['situation']
+            else:
+                nhl_games[game_pk].home.in_power_play = False
+                nhl_games[game_pk].away.in_power_play = False
             # print(game['teams']['away']['team']['name'], game['teams']['away']['score'])
             # print(game['teams']['home']['team']['name'], game['teams']['home']['score'])
 
         for k in list(nhl_games.keys()):
+            print(nhl_games[k])
             d = nhl_games[k].time_delay()
             if not d:
                 del nhl_games[k]
