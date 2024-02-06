@@ -49,7 +49,7 @@ class NHLGame:
         self.game_status = None
 
     def __str__(self):
-        return f"{self.home.team_name} {'PP' if self.home.in_power_play else ''} vs {self.away.team_name} {'PP' if self.away.in_power_play else ''} - {self.game_status}, {self.home.last_score}-{self.away.last_score}"
+        return f"{self.home.team_name} ({self.home.team_abbr}) {'PP' if self.home.in_power_play else ''} vs {self.away.team_name} ({self.away.team_abbr}) {'PP' if self.away.in_power_play else ''} - {self.game_status}, {self.home.last_score}-{self.away.last_score}"
 
     def time_delay(self):
         if self.game_status == 'LIVE':
